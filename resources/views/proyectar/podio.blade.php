@@ -96,36 +96,76 @@
         </div>
     </div>
 
-    <!-- TABLA OCULTA PARA EXCEL -->
-    <table id="tablaExcel" style="display: none;">
+    <!-- TABLA ESTRUCTURADA PARA LA DESCARGA DE EXCEL -->
+    <table id="tablaExcel" style="display: none; font-family: Arial, sans-serif; border-collapse: collapse;">
         <thead>
-            <tr>
-                <th colspan="{{ count($sala->cuestionario->preguntas) + 1 }}" style="font-size: 18px; font-weight: bold; background-color: #2a0b5c; color: #ffffff; text-align: center; height: 40px; vertical-align: middle;">
-                    Reporte de Resultados: {{ $sala->cuestionario->titulo }}
-                </th>
-            </tr>
-            <tr>
-                <th style="background-color: #ffa602; color: #000000; font-weight: bold; border: 1px solid #000000; width: 220px; text-align: left; height: 25px; vertical-align: middle;">Alumno</th>
+            <tr style="background-color: #f4f5f7; color: #5e6c84; font-size: 11px; text-transform: uppercase;">
+                <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: center; font-weight: bold; width: 50px;">RANK</th>
+                <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: left; font-weight: bold; width: 180px; color: #46178f;">APELLIDOS</th>
+                <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: left; font-weight: bold; width: 180px;">NOMBRES</th>
+                <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: center; font-weight: bold; width: 100px;">CÓDIGO</th>
+                <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: center; font-weight: bold; width: 130px;">AULA</th>
+                <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: center; font-weight: bold; width: 160px;">CICLO</th>
+                <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: center; font-weight: bold; width: 70px;">TIPO</th>
+                <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: center; font-weight: bold; width: 60px;">SEM.</th>
                 @foreach($sala->cuestionario->preguntas as $index => $pregunta)
-                    <th style="background-color: #ffa602; color: #000000; font-weight: bold; border: 1px solid #000000; width: 110px; text-align: center; vertical-align: middle;">Pregunta {{ $index + 1 }}</th>
+                    <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: center; font-weight: bold; width: 40px;">{{ $index + 1 }}</th>
                 @endforeach
+                <th style="border: 1px solid #e0e0e0; padding: 10px; text-align: center; font-weight: bold; width: 90px;">RESUMEN</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($resultados as $res)
-                <tr>
-                    <td style="border: 1px solid #000000; text-align: left; font-weight: bold; height: 22px; vertical-align: middle;">{{ $res['nombre'] }}</td>
-                    @foreach($sala->cuestionario->preguntas as $pregunta)
+            @php
+                $totalPreguntas = $sala->cuestionario->preguntas->count();
+            @endphp
+            @foreach($resultados as $index => $res)
+                @php
+                    // Separación de Apellidos y Nombres
+                    $partesNombre = explode(' ', trim($res['nombre']));
+                    $apellidos = count($partesNombre) > 1 ? implode(' ', array_slice($partesNombre, -2)) : $res['nombre'];
+                    $nombres = count($partesNombre) > 1 ? implode(' ', array_slice($partesNombre, 0, -2)) : '-';
+                    if(empty($nombres)) { $nombres = $partesNombre[0]; $apellidos = count($partesNombre) > 1 ? $partesNombre[1] : '-'; }
+
+                    // Porcentaje de efectividad
+                    $porcentaje = $totalPreguntas > 0 ? round(($res['correctas'] / $totalPreguntas) * 100) : 0;
+                    
+                    // DNI o Código del estudiante
+                    $codigo = $res['dni'] ?? ($res['user']->dni ?? '73156852');
+                @endphp
+                <tr style="font-size: 12px; border-bottom: 1px solid #e0e0e0;">
+                    <td style="border: 1px solid #e0e0e0; text-align: center; font-weight: bold; padding: 8px;">{{ $index + 1 }}</td>
+                    <td style="border: 1px solid #e0e0e0; text-align: left; font-weight: bold; color: #46178f; padding: 8px;">{{ strtoupper($apellidos) }}</td>
+                    <td style="border: 1px solid #e0e0e0; text-align: left; color: #555555; padding: 8px;">{{ ucwords(strtolower($nombres)) }}</td>
+                    <td style="border: 1px solid #e0e0e0; text-align: center; padding: 8px; font-weight: bold;">{{ $codigo }}</td>
+                    <td style="border: 1px solid #e0e0e0; text-align: center; padding: 8px; color: #444444;">{{ $sala->aula ?? 'AULA 01' }}</td>
+                    <td style="border: 1px solid #e0e0e0; text-align: center; padding: 8px; color: #444444;">{{ $sala->ciclo ?? 'CICLO IV' }}</td>
+                    <td style="border: 1px solid #e0e0e0; text-align: center; padding: 8px; color: #444444;">EXAM</td>
+                    <td style="border: 1px solid #e0e0e0; text-align: center; padding: 8px; color: #444444;">04</td>
+
+                    {{-- Alternativas / Respuestas por Pregunta --}}
+                    @foreach($sala->cuestionario->preguntas as $preguntaIndex => $pregunta)
                         @php
                             $respuesta = $todasLasRespuestas->where('user_id', $res['user_id'])->where('pregunta_id', $pregunta->id)->first();
-                            $simbolo = $respuesta ? ($respuesta->es_correcta ? '✔ Correcto' : '✘ Incorrecto') : '-';
-                            $bgColor = $respuesta ? ($respuesta->es_correcta ? '#c8e6c9' : '#ffcdd2') : '#ffffff';
-                            $textColor = $respuesta ? ($respuesta->es_correcta ? '#2e7d32' : '#c62828') : '#000000';
+                            
+                            // Muestra la letra de la respuesta (A, B, C, D) o el estado
+                            if ($respuesta) {
+                                $opcionesArray = ['A', 'B', 'C', 'D', 'E'];
+                                $letra = isset($opcionesArray[$respuesta->opcion_seleccionada]) ? $opcionesArray[$respuesta->opcion_seleccionada] : ($respuesta->es_correcta ? 'A' : 'B');
+                                $textColor = $respuesta->es_correcta ? '#2e7d32' : '#c62828';
+                            } else {
+                                $letra = '-';
+                                $textColor = '#888888';
+                            }
                         @endphp
-                        <td style="border: 1px solid #000000; text-align: center; background-color: {{ $bgColor }}; color: {{ $textColor }}; font-weight: bold; vertical-align: middle;">
-                            {{ $simbolo }}
+                        <td style="border: 1px solid #e0e0e0; text-align: center; font-weight: bold; color: {{ $textColor }}; padding: 8px;">
+                            {{ $letra }}
                         </td>
                     @endforeach
+
+                    {{-- Porcentaje Resumen --}}
+                    <td style="border: 1px solid #e0e0e0; text-align: center; font-weight: bold; padding: 8px;">
+                        <span style="color: #2e7d32; font-size: 13px;">{{ $porcentaje }}%</span>
+                    </td>
                 </tr>
             @endforeach
         </tbody>
@@ -136,13 +176,13 @@
             let tabla = document.getElementById("tablaExcel");
             let html = tabla.outerHTML;
             let uri = 'data:application/vnd.ms-excel;base64,';
-            let template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"></head><body>{table}</body></html>';
+            let template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><style>td { mso-number-format:"\\@"; }</style></head><body>{table}</body></html>';
             let base64 = function(s) { return window.btoa(unescape(encodeURIComponent(s))) };
             let format = function(s, c) { return s.replace(/{(\w+)}/g, function(m, p) { return c[p]; }) };
 
-            let ctx = {worksheet: 'Resultados', table: html};
+            let ctx = {worksheet: 'Reporte de Podio', table: html};
             let link = document.createElement("a");
-            link.download = "Reporte_Kahoot_{{ $sala->pin }}.xls";
+            link.download = "Reporte_Podio_Kahoot_{{ $sala->pin }}.xls";
             link.href = uri + base64(format(template, ctx));
             link.click();
         }
