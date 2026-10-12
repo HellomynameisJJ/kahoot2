@@ -30,15 +30,17 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Validamos el DNI en lugar del email
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'dni' => ['required', 'string', 'size:8', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Creamos el usuario guardando el DNI
         $user = User::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'dni' => $request->dni,
             'password' => Hash::make($request->password),
         ]);
 

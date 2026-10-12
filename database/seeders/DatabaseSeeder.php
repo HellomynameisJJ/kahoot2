@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
         // Usuario Docente de prueba
         User::create([
             'name' => 'Profesor Carlos',
-            'email' => 'profesor@kahoot.com',
+            'dni' => '12345678', // Cambiado a DNI
             'password' => Hash::make('password123'),
             'role' => 'docente',
         ]);
@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
         // Usuario Estudiante de prueba 1
         User::create([
             'name' => 'Estudiante Juan',
-            'email' => 'estudiante@kahoot.com',
+            'dni' => '87654321', // Cambiado a DNI
             'password' => Hash::make('password123'),
             'role' => 'estudiante',
         ]);
@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
         // Usuario Estudiante de prueba 2
         User::create([
             'name' => 'Estudiante Edu',
-            'email' => 'estudiantee@kahoot.com',
+            'dni' => '11223344', // Cambiado a DNI
             'password' => Hash::make('contraseña123'),
             'role' => 'estudiante',
         ]);
@@ -43,7 +43,7 @@ class DatabaseSeeder extends Seeder
         // Usuario Estudiante adicional (Al azar)
         User::create([
             'name' => 'Estudiante Sofía',
-            'email' => 'sofia@kahoot.com',
+            'dni' => '44332211', // Cambiado a DNI
             'password' => Hash::make('password1234'),
             'role' => 'estudiante',
         ]);

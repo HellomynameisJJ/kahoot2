@@ -316,33 +316,26 @@
             }
         }
 
-        // Función nativa para descargar la plantilla Excel oficial embebida en Base64
+        // Función corregida para descargar la plantilla CSV limpia que abre directamente en Excel sin errores
         function descargarPlantillaExcel() {
-            const base64Data = "UEsDBBQAAAAIAGyFMV1Gx01IlQAAAM0AAAAQAAAAZG9jUHJvcH"; // Relleno automático del Excel de 5 preguntas
-            // Nota: Aquí se incluye la cadena completa del Excel que me enviaste para descarga limpia
-            const fullBase64 = "UEsDBBQAAAAIAGyFMV1Gx01IlQAAAM0AAAAQAAAAZG9jUHJvcGVydGllcy9jb3JlLnhtbCCiBAEToAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHylz1uogjAcBuC9wndA9hVqZ+s4LjoTzaqdzWZzYp8XoHBTqYVCN8j37pVQ2hY96C8P/ufw+Xk+rE2CtiyY5HwA88RjI88RjDq40c5uI8W5BIMzWcWCS28x6oJtA57O0mKx7sZk7p86G+lVp2bH37f5sU3Q2U86Kptv1T8m1p1N398Jc4w2e0vE1bN96aH3vN9N77HqF3t2T6T2Yy0M52G2OevT7/bHwEaA1/J3c0ZgL3xS1rX4Wk4V7KjO9d5YvNn/wK5e2L3J/A7M8sTq0/03z9P50/P08m4+0dAP4A1yP/APrU4v14pA1cUAz+APoD/wD83wE="; // Se generará el blob limpio abajo con la estructura del archivo
-            
-            // Generador del archivo binario exacto de la encuesta de 5 preguntas
-            const excelBase64 = "UEsDBBQAAAAIAGyFMV1Gx01IlQAAAM0AAAAQAAAAZG9jUHJvcGVydGllcy9jb3JlLnhtbCCiBAEToAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHylz1uogjAcBuC9wndA9hVqZ+s4LjoTzaqdzWZzYp8XoHBTqYVCN8j37pVQ2hY96C8P/ufw+Xk+rE2CtiyY5HwA88RjI88RjDq40c5uI8W5BIMzWcWCS28x6oJtA57O0mKx7sZk7p86G+lVp2bH37f5sU3Q2U86Kptv1T8m1p1N398Jc4w2e0vE1bN96aH3vN9N77HqF3t2T6T2Yy0M52G2OevT7/bHwEaA1/J3c0ZgL3xS1rX4Wk4V7KjO9d5YvNn/wK5e2L3J/A7M8sTq0/03z9P50/P08m4+0dAP4A1yP/APrU4v14pA1cUAz+APoD/wD83wE="; 
-            
-            // Para asegurar la descarga directa y limpia del archivo Excel oficial:
+            const contenidoCSV = [
+                "Pregunta;Opcion 1;Opcion 2;Opcion 3;Opcion 4;Respuesta Correcta (1-4)",
+                "¿Cuál es el valor de sen(30°)?;0.5;1;0;2;1",
+                "¿Cuál es la capital de Perú?;Lima;Cusco;Arequipa;Trujillo;1",
+                "¿Cuánto es 2 + 2?;3;4;5;22;2"
+            ].join("\n");
+
+            const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            link.href = '#';
+            const url = URL.createObjectURL(blob);
             
-            // Creamos un link simulado hacia un objeto blob con el contenido binario del Excel de las 5 preguntas
-            fetch('data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + "{{ $encoded_excel ?? '' }}")
-                .then(res => res.blob())
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
-                    link.href = url;
-                    link.download = 'encuesta_5_preguntas_universales.xlsx';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }).catch(err => {
-                    // Fallback directo si Blade no estuviera compilando la variable
-                    alert("Descargando la plantilla oficial de 5 preguntas...");
-                });
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'plantilla_cuestionario.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         let questionIndex = 0;

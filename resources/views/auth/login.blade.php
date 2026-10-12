@@ -141,11 +141,11 @@
         <form method="POST" action="{{ route('login') }}">
             @csrf
 
-            <!-- Email Address -->
+            <!-- DNI Address -->
             <div style="margin-bottom: 20px;">
-                <label for="email" class="form-label">Correo institucional</label>
-                <input id="email" class="glass-input" type="email" name="email" value="{{ old('email') }}" required autofocus placeholder="tucorreo@tungasuca.edu.pe" />
-                @error('email')
+                <label for="dni" class="form-label">Número de DNI</label>
+                <input id="dni" class="glass-input" type="text" name="dni" value="{{ old('dni') }}" required autofocus maxlength="8" pattern="[0-9]{8}" placeholder="Ingrese su DNI (8 dígitos)" />
+                @error('dni')
                     <span style="color: #ff6b81; font-weight: 600; font-size: 12px; margin-top: 6px; display: block;">{{ $message }}</span>
                 @enderror
             </div>
