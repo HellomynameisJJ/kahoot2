@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear Cuestionario — Kahoot 2.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Librería SheetJS (xlsx) para leer archivos de Excel nativos (.xlsx, .xls) desde el navegador -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         :root {
@@ -89,7 +91,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        /* Estilo para el botón de descargar plantilla al lado derecho */
         .btn-template {
             background: rgba(38, 137, 12, 0.85); border: 1px solid #26890c;
             color: white; padding: 12px 18px; font-weight: 700; border-radius: 12px; cursor: pointer;
@@ -206,10 +207,9 @@
             <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 5px;">Configura tu Evaluación</h2>
             <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 25px;">Diseña y edita preguntas interactivas con soporte visual y tiempo general por cada área académica.</p>
 
-            <!-- PESTAÑAS Y BOTÓN DE DESCARGAR PLANTILLA AL LADO DERECHO -->
             <div class="tab-buttons">
                 <button type="button" class="tab-btn active" onclick="switchTab('manual')">✍️ Manual (Formulario)</button>
-                <button type="button" class="tab-btn" onclick="switchTab('archivo')">📁 Subir Excel o PDF</button>
+                <button type="button" class="tab-btn" onclick="switchTab('archivo')">📁 Subir Excel o CSV</button>
                 <button type="button" class="btn-template" onclick="descargarPlantillaExcel()">📊 Descargar Plantilla</button>
             </div>
 
@@ -286,15 +286,15 @@
                 </form>
             </div>
 
-            <!-- SUBIDA DE ARCHIVOS -->
+            <!-- SUBIDA DE ARCHIVOS (EXCEL / CSV) -->
             <div id="tab-archivo" class="tab-content">
                 <div class="form-group">
-                    <label class="form-label">Sube tu documento (Excel .xlsx o PDF .pdf)</label>
+                    <label class="form-label">Sube tu archivo Excel (.xlsx, .xls) o CSV</label>
                     <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
                         <div style="font-size: 35px; margin-bottom: 8px;">📄📊</div>
-                        <div id="fileLabelText" style="font-weight: 700; font-size: 15px; margin-bottom: 5px;">Haz clic para seleccionar el archivo</div>
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.5);">Se convertirán automáticamente en preguntas editables</div>
-                        <input type="file" id="fileInput" accept=".xlsx, .xls, .pdf" style="display: none;" onchange="handleFileSelect(event)">
+                        <div id="fileLabelText" style="font-weight: 700; font-size: 15px; margin-bottom: 5px;">Haz clic para seleccionar tu archivo Excel o CSV</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.5);">Se mapeará automáticamente al formulario interactivo</div>
+                        <input type="file" id="fileInput" accept=".xlsx, .xls, .csv, .txt" style="display: none;" onchange="handleFileSelect(event)">
                     </div>
                 </div>
             </div>
@@ -316,7 +316,6 @@
             }
         }
 
-        // Función corregida para descargar la plantilla CSV limpia que abre directamente en Excel sin errores
         function descargarPlantillaExcel() {
             const contenidoCSV = [
                 "Pregunta;Opcion 1;Opcion 2;Opcion 3;Opcion 4;Respuesta Correcta (1-4)",
@@ -338,9 +337,9 @@
             document.body.removeChild(link);
         }
 
-        let questionIndex = 0;
+        let questionIndex = -1;
 
-        function addQuestion(preguntaTexto = '', opcionesArray = []) {
+        function addQuestion(preguntaTexto = '', opcionesArray = [], correctaIndex = 0) {
             questionIndex++;
             const cardId = 'q-card-' + questionIndex;
             const optionsId = 'options-' + questionIndex;
@@ -357,9 +356,10 @@
             let opcionesHtml = '';
             if (opcionesArray.length > 0) {
                 opcionesArray.forEach((optText, optIdx) => {
+                    const isChecked = (optIdx === correctaIndex) ? 'checked' : '';
                     opcionesHtml += `
                         <div class="option-row">
-                            <input type="radio" name="preguntas[${questionIndex}][correcta]" value="${optIdx}" class="correct-radio" ${optIdx === 0 ? 'checked' : ''} required title="Marcar como correcta">
+                            <input type="radio" name="preguntas[${questionIndex}][correcta]" value="${optIdx}" class="correct-radio" ${isChecked} required title="Marcar como correcta">
                             <input type="text" name="preguntas[${questionIndex}][opciones][]" class="form-input" value="${optText}" placeholder="Opción ${optIdx + 1}" required style="flex:1;">
                             <button type="button" class="delete-option-btn" onclick="removeOption(this, ${questionIndex}, '${optionsId}')">✕</button>
                         </div>
@@ -421,6 +421,12 @@
             actualizarNumeracionPreguntas();
         }
 
+        document.addEventListener("DOMContentLoaded", () => {
+            if(document.querySelectorAll('.question-card').length === 0) {
+                addQuestion();
+            }
+        });
+
         function toggleEditQuestion(cardId) {
             const card = document.getElementById(cardId);
             card.classList.toggle('collapsed');
@@ -477,8 +483,9 @@
             const container = document.getElementById(optionsContainerId);
             const row = document.createElement('div');
             row.className = 'option-row';
+            const optionIndex = container.querySelectorAll('.option-row').length;
             row.innerHTML = `
-                <input type="radio" name="preguntas[${qIdx}][correcta]" value="0" class="correct-radio" required title="Marcar como correcta">
+                <input type="radio" name="preguntas[${qIdx}][correcta]" value="${optionIndex}" class="correct-radio" required title="Marcar como correcta">
                 <input type="text" name="preguntas[${qIdx}][opciones][]" class="form-input" placeholder="Nueva Opción" required style="flex:1;">
                 <button type="button" class="delete-option-btn" onclick="removeOption(this, ${qIdx}, '${optionsContainerId}')">✕</button>
             `;
@@ -508,6 +515,7 @@
             });
         }
 
+        // LECTURA INTELIGENTE CON SHEETJS PARA .XLSX, .XLS Y CSV
         function handleFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -518,20 +526,72 @@
                 mainTitle.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
             }
 
-            const realExcelQuestions = [
-                { q: "¿Cuál es tu rango de edad?", opciones: ["Menos de 18", "18 - 25", "26 - 35", "36 - 45", "46 - 60", "Más de 60"] },
-                { q: "¿Cuál es tu género?", opciones: ["Masculino", "Femenino", "Prefiero no decirlo", "Otro"] },
-                { q: "¿Cuál es tu nivel educativo más alto alcanzado?", opciones: ["Educación primaria", "Educación secundaria", "Técnico/Superior", "Universitario", "Postgrado"] },
-                { q: "¿Con qué frecuencia usas este producto/servicio?", opciones: ["Nunca", "Rara vez", "A veces", "Frecuentemente", "Siempre"] },
-                { q: "¿Qué tan satisfecho/a estás en general?", opciones: ["Muy insatisfecho", "Insatisfecho", "Neutral", "Satisfecho", "Muy satisfecho"] }
-            ];
+            const reader = new FileReader();
+
+            // Si es un archivo Excel nativo (.xlsx, .xls) se lee como binario con SheetJS
+            if (file.name.match(/\.(xlsx|xls)$/i)) {
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // Convertir la hoja de Excel en formato JSON tipo matriz (array de filas)
+                        const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        procesarFilasGenericas(jsonRows);
+                    } catch (error) {
+                        alert("Error al leer el archivo Excel: " + error.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                // Si es un archivo CSV o texto plano
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    const lineas = text.split(/\r\n|\n/);
+                    const jsonRows = lineas.map(linea => linea.split(';'));
+                    procesarFilasGenericas(jsonRows);
+                };
+                reader.readAsText(file, 'UTF-8');
+            }
+        }
+
+        function procesarFilasGenericas(rows) {
+            if (rows.length <= 1) {
+                alert("El archivo está vacío o no contiene suficientes filas.");
+                return;
+            }
 
             document.getElementById('questions-container').innerHTML = '';
             questionIndex = -1;
 
-            realExcelQuestions.forEach((item) => {
-                addQuestion(item.q, item.opciones);
-            });
+            // Empezar desde i = 1 para omitir la fila de cabecera
+            for (let i = 1; i < rows.length; i++) {
+                let row = rows[i];
+                if (!row || row.length === 0 || !row[0]) continue;
+
+                let textoPregunta = String(row[0]).trim();
+                let opciones = [];
+
+                // Recolectar las opciones de las columnas siguientes (índices 1, 2, 3, 4)
+                for (let c = 1; c <= 4; c++) {
+                    if (row[c] !== undefined && row[c] !== null && String(row[c]).trim() !== "") {
+                        opciones.push(String(row[c]).trim());
+                    }
+                }
+
+                // Obtener el índice de la respuesta correcta (columna 5, restando 1 para base 0)
+                let correctaCol = (row[5] !== undefined && row[5] !== null && !isNaN(row[5])) 
+                    ? parseInt(row[5]) - 1 
+                    : 0;
+                
+                if (correctaCol < 0 || correctaCol >= opciones.length) correctaCol = 0;
+
+                if (textoPregunta && opciones.length >= 2) {
+                    addQuestion(textoPregunta, opciones, correctaCol);
+                }
+            }
 
             switchTab('manual');
         }
